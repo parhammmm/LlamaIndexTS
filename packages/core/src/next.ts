@@ -29,6 +29,7 @@ export default function withLlamaIndex(config: any) {
       sharp$: false,
       "onnxruntime-node$": false,
       "@google-cloud/vertexai": false,
+      "@smithy/protocol-http": false,
     };
     return webpackConfig;
   };
