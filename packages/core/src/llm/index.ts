@@ -4,6 +4,7 @@ export {
   ALL_AVAILABLE_V3_MODELS,
   Anthropic,
 } from "./anthropic.js";
+export { BEDROCK_MODELS, Bedrock } from "./bedrock/base.js";
 export { FireworksLLM } from "./fireworks.js";
 export { Gemini, GeminiSession } from "./gemini/base.js";
 
