@@ -1,5 +1,15 @@
 # examples
 
+## 0.0.5
+
+### Patch Changes
+
+- 37525df: Added support for accessing Gemini via Vertex AI
+- Updated dependencies [1b1081b]
+- Updated dependencies [37525df]
+- Updated dependencies [a1f2475]
+  - llamaindex@0.3.13
+
 ## 0.0.4
 
 ### Patch Changes

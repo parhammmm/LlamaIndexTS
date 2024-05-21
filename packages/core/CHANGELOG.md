@@ -1,5 +1,13 @@
 # llamaindex
 
+## 0.3.13
+
+### Patch Changes
+
+- 1b1081b: Add vectorStores to storage context to define vector store per modality
+- 37525df: Added support for accessing Gemini via Vertex AI
+- a1f2475: Add system prompt to ContextChatEngine
+
 ## 0.3.12
 
 ### Patch Changes

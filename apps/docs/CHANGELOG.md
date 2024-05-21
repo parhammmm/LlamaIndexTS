@@ -1,5 +1,15 @@
 # docs
 
+## 0.0.21
+
+### Patch Changes
+
+- Updated dependencies [1b1081b]
+- Updated dependencies [37525df]
+- Updated dependencies [a1f2475]
+  - llamaindex@0.3.13
+  - @llamaindex/examples@0.0.5
+
 ## 0.0.20
 
 ### Patch Changes
