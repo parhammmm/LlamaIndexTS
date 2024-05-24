@@ -6,7 +6,6 @@ import type { BaseRetriever } from "../../Retriever.js";
 import { wrapEventCaller } from "../../internal/context/EventCaller.js";
 import type { ChatMessage, ChatResponseChunk, LLM } from "../../llm/index.js";
 import { OpenAI } from "../../llm/index.js";
-import type { MessageContent } from "../../llm/types.js";
 import {
   extractText,
   streamConverter,
@@ -21,6 +20,7 @@ import type {
   ChatEngineParamsStreaming,
   ContextGenerator,
 } from "./types.js";
+import { prepareRequestMessagesWithContext } from "./utils.js";
 
 /**
  * ContextChatEngine uses the Index to get the appropriate context for each query.
@@ -69,10 +69,12 @@ export class ContextChatEngine extends PromptMixin implements ChatEngine {
     const chatHistory = params.chatHistory
       ? getHistory(params.chatHistory)
       : this.chatHistory;
-    const requestMessages = await this.prepareRequestMessages(
+    const requestMessages = await prepareRequestMessagesWithContext({
       message,
       chatHistory,
-    );
+      contextGenerator: this.contextGenerator,
+      systemPrompt: this.systemPrompt,
+    });
     if (stream) {
       const stream = await this.chatModel.chat({
         messages: requestMessages.messages,
@@ -102,28 +104,5 @@ export class ContextChatEngine extends PromptMixin implements ChatEngine {
 
   reset() {
     this.chatHistory.reset();
-  }
-
-  private async prepareRequestMessages(
-    message: MessageContent,
-    chatHistory: ChatHistory,
-  ) {
-    chatHistory.addMessage({
-      content: message,
-      role: "user",
-    });
-    const textOnly = extractText(message);
-    const context = await this.contextGenerator.generate(textOnly);
-    const systemMessage = this.prependSystemPrompt(context.message);
-    const messages = await chatHistory.requestMessages([systemMessage]);
-    return { nodes: context.nodes, messages };
-  }
-
-  private prependSystemPrompt(message: ChatMessage): ChatMessage {
-    if (!this.systemPrompt) return message;
-    return {
-      ...message,
-      content: this.systemPrompt.trim() + "\n" + message.content,
-    };
   }
 }

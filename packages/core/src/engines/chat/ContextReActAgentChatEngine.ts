@@ -6,8 +6,12 @@ import type { BaseRetriever } from "../../Retriever.js";
 import { ReActAgent, type BaseToolWithCall } from "../../index.edge.js";
 import { wrapEventCaller } from "../../internal/context/EventCaller.js";
 import type { ChatMessage } from "../../llm/index.js";
-import type { LLM, MessageContent } from "../../llm/types.js";
-import { extractText, streamConverter } from "../../llm/utils.js";
+import type { LLM } from "../../llm/types.js";
+import {
+  extractText,
+  streamConverter,
+  streamReducer,
+} from "../../llm/utils.js";
 import type { BaseNodePostprocessor } from "../../postprocessors/index.js";
 import { PromptMixin } from "../../prompts/Mixin.js";
 import { DefaultContextGenerator } from "./DefaultContextGenerator.js";
@@ -17,27 +21,34 @@ import type {
   ChatEngineParamsStreaming,
   ContextGenerator,
 } from "./types.js";
+import { prepareRequestMessagesWithContext } from "./utils.js";
+
+const DEFAULT_REACT_CHAT_ENGINE_SYSTEM_PROMPT = `For your final reply don't mention your thought just give the final answer. Don't start with "Answer: "`;
 
 export class ContextReActAgentChatEngine
   extends PromptMixin
   implements ChatEngine
 {
-  llm: LLM;
+  chatModel: LLM;
   tools: BaseToolWithCall[] = [];
   chatHistory: ChatHistory;
   contextGenerator: ContextGenerator;
+  systemPrompt?: string;
 
   constructor(init: {
     retriever: BaseRetriever;
-    llm: LLM;
+    chatModel: LLM;
     tools?: BaseToolWithCall[];
     chatHistory?: ChatMessage[];
     contextSystemPrompt?: ContextSystemPrompt;
     nodePostprocessors?: BaseNodePostprocessor[];
+    systemPrompt?: string;
   }) {
     super();
 
-    this.llm = init.llm;
+    this.systemPrompt =
+      this.systemPrompt ?? DEFAULT_REACT_CHAT_ENGINE_SYSTEM_PROMPT;
+    this.chatModel = init.chatModel;
     this.tools = init.tools ?? [];
     this.chatHistory = getHistory(init?.chatHistory);
     this.contextGenerator = new DefaultContextGenerator({
@@ -63,13 +74,15 @@ export class ContextReActAgentChatEngine
     const chatHistory = params.chatHistory
       ? getHistory(params.chatHistory)
       : this.chatHistory;
-    const requestMessages = await this.prepareRequestMessages(
+    const requestMessages = await prepareRequestMessagesWithContext({
       message,
       chatHistory,
-    );
+      contextGenerator: this.contextGenerator,
+      systemPrompt: this.systemPrompt,
+    });
     const agent = new ReActAgent({
       tools: this.tools,
-      llm: this.llm,
+      llm: this.chatModel,
       chatHistory: requestMessages.messages,
     });
 
@@ -79,7 +92,14 @@ export class ContextReActAgentChatEngine
         stream: true,
       });
       return streamConverter(
-        stream,
+        streamReducer({
+          stream,
+          initialValue: "",
+          reducer: (accumulator, part) => (accumulator += part.response.delta),
+          finished: (accumulator) => {
+            chatHistory.addMessage({ content: accumulator, role: "assistant" });
+          },
+        }),
         (r) => new Response(r.response.delta, requestMessages.nodes),
       );
     }
@@ -96,21 +116,5 @@ export class ContextReActAgentChatEngine
 
   reset() {
     this.chatHistory.reset();
-  }
-
-  private async prepareRequestMessages(
-    message: MessageContent,
-    chatHistory: ChatHistory,
-  ) {
-    chatHistory.addMessage({
-      content: message,
-      role: "user",
-    });
-    const textOnly = extractText(message);
-    const context = await this.contextGenerator.generate(textOnly);
-    const messages = await chatHistory.requestMessages(
-      context ? [context.message] : undefined,
-    );
-    return { nodes: context.nodes, messages };
   }
 }
