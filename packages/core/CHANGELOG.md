@@ -1,5 +1,13 @@
 # llamaindex
 
+## 0.3.16
+
+### Patch Changes
+
+- 6b1ded4: add gpt4o-mode, invalidate cache and skip diagonal text to LlamaParseReader
+- da1f025: add concurrency management for SimpleDirectoryReader
+- a29d835: setDocumentHash should be async
+
 ## 0.3.15
 
 ### Patch Changes
