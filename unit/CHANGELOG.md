@@ -1,5 +1,11 @@
 # @llamaindex/unit-test
 
+## 0.0.43
+
+### Patch Changes
+
+- llamaindex@0.8.33
+
 ## 0.0.42
 
 ### Patch Changes

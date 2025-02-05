@@ -1,5 +1,12 @@
 # llamaindex
 
+## 0.8.33
+
+### Patch Changes
+
+- Updated dependencies [067a489]
+  - @llamaindex/anthropic@0.0.31
+
 ## 0.8.32
 
 ### Patch Changes
